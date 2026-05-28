@@ -1,0 +1,39 @@
+{
+  "name": "sensei",
+  "displayName": "Sensei",
+  "description": "A silent coding teacher that watches you code and whispers only when you drift.",
+  "version": "0.0.1",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Education", "Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sensei.setIntent",
+        "title": "Sensei: Set Intent"
+      },
+      {
+        "command": "sensei.resetSession",
+        "title": "Sensei: Reset Session"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0"
+  },
+  "dependencies": {
+    "check-disk-space": "^3.4.0"
+  }
+}
