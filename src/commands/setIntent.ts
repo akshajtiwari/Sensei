@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 // Stores intent per workspace session (in-memory for now)
 let currentIntent: string | null = null;
@@ -8,16 +8,18 @@ export function getCurrentIntent(): string | null {
 }
 
 export function registerSetIntent(context: vscode.ExtensionContext): void {
-  const cmd = vscode.commands.registerCommand('sensei.setIntent', async () => {
+  const cmd = vscode.commands.registerCommand("sensei.setIntent", async () => {
     const input = await vscode.window.showInputBox({
-      prompt: 'What are you building?',
-      placeHolder: 'e.g. a program to add two numbers',
-      ignoreFocusOut: true
+      prompt: "What are you building?",
+      placeHolder: "e.g. a program to add two numbers",
+      ignoreFocusOut: true,
     });
 
     if (input && input.trim()) {
       currentIntent = input.trim();
-      vscode.window.showInformationMessage(`Sensei: Got it. Building "${currentIntent}"`);
+      vscode.window.showInformationMessage(
+        `Sensei: Got it. Building "${currentIntent}"`,
+      );
     }
   });
 
@@ -25,9 +27,9 @@ export function registerSetIntent(context: vscode.ExtensionContext): void {
 }
 
 export function registerResetSession(context: vscode.ExtensionContext): void {
-  const cmd = vscode.commands.registerCommand('sensei.resetSession', () => {
+  const cmd = vscode.commands.registerCommand("sensei.resetSession", () => {
     currentIntent = null;
-    vscode.window.showInformationMessage('Sensei: Session reset.');
+    vscode.window.showInformationMessage("Sensei: Session reset.");
   });
 
   context.subscriptions.push(cmd);

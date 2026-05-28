@@ -25,11 +25,11 @@ Not a chatbot. Not autocomplete. A teacher.
 
 ## Model Tiers
 
-| Tier | Model | RAM |
-|------|-------|-----|
-| Minimum | qwen2.5-coder:0.5b | ≤4GB |
+| Tier    | Model              | RAM   |
+| ------- | ------------------ | ----- |
+| Minimum | qwen2.5-coder:0.5b | ≤4GB  |
 | Average | qwen2.5-coder:1.5b | 4-8GB |
-| Good | qwen2.5-coder:3b | 8GB+ |
+| Good    | qwen2.5-coder:3b   | 8GB+  |
 
 ## Commands
 
