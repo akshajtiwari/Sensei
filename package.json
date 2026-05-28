@@ -3,9 +3,16 @@
   "displayName": "Sensei",
   "description": "A silent coding teacher that watches you code and whispers only when you drift.",
   "version": "0.0.1",
-  "engines": { "vscode": "^1.85.0" },
-  "categories": ["Education", "Other"],
-  "activationEvents": ["onStartupFinished"],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Education",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
