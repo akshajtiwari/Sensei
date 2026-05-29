@@ -15,8 +15,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
   function checkversion(): Promise<boolean> {
     return new Promise((resolve) => {
-      exec("ollama --version", (error) => {
-        resolve(!error);
+      exec("ollama --version", (error,stdout,stderr) => {
+        const output =stdout+stderr;
+        if(output.includes("command not found")){
+          resolve(false);
+          return;
+        }
+        resolve(true);
       });
     });
   }
@@ -28,7 +33,7 @@ export async function activate(context: vscode.ExtensionContext) {
     });
   }
 
-  if (!ollamaRunning) {
+  if (!ollamaRunning) {///problem in this function....does not detect downloaded +not running ..gives the error of not downloaded
     //Prompt if ollama is not installed
     const checkver = await checkversion();
     if (!checkver) {
@@ -49,7 +54,7 @@ export async function activate(context: vscode.ExtensionContext) {
     } else //ollama is not running
     {
       const run_ollama = await vscode.window.showWarningMessage(
-        "Ollama is not running",
+        "Ollama is installed but not running",
         "Start Ollama",
       );
       if (run_ollama == "Start Ollama") {
