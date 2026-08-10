@@ -1,0 +1,71 @@
+<!--
+  setup.html  —  Stage 6 (STRETCH) starter for Sensei's onboarding webview.
+  This is a normal web page that VS Code renders inside an editor tab. It talks
+  to the extension by sending/receiving messages (see the <script> at the bottom).
+
+  STATUS: complete. The extension loads this page during first-run setup.
+
+  NOTE: __CSP_SOURCE__ and __RAM__ are placeholders the extension replaces with
+  real values before showing the page (see setupPanel.ts spec).
+-->
+<meta
+  http-equiv="Content-Security-Policy"
+  content="default-src 'none'; style-src __CSP_SOURCE__; script-src 'unsafe-inline';"
+/>
+<link rel="stylesheet" href="__CSS__" />
+<section class="card">
+  <h1>🥋 Welcome to Sensei</h1>
+  <p>A coding teacher that whispers hints — never writes your code for you.</p>
+
+  <p class="ram">Detected RAM: <strong>__RAM__ GB</strong></p>
+
+  <fieldset>
+    <legend>Choose a model</legend>
+    <label>
+      <input type="radio" name="model" data-tier="minimum" value="__MINIMUM__" />
+      Minimum — __MINIMUM__ (up to 4 GB RAM)
+    </label>
+    <label>
+      <input type="radio" name="model" data-tier="average" value="__AVERAGE__" />
+      Average — __AVERAGE__ (4–8 GB RAM)
+    </label>
+    <label>
+      <input type="radio" name="model" data-tier="good" value="__GOOD__" />
+      Good — __GOOD__ (8 GB+ RAM)
+    </label>
+  </fieldset>
+
+  <button id="download">Download &amp; Start</button>
+
+  <div class="progress" hidden><div id="bar"></div></div>
+  <p id="status"></p>
+</section>
+
+<script>
+  // LEARN: this handle lets the page send messages TO the extension.
+  const vscode = acquireVsCodeApi();
+  const recommended = "__RECOMMENDED__";
+  document.querySelector(`[data-tier="${recommended}"]`).checked = true;
+
+  document.getElementById("download").addEventListener("click", () => {
+    const selected = document.querySelector('input[name="model"]:checked');
+    if (!selected) return;
+
+    document.getElementById("download").disabled = true;
+    document.querySelector(".progress").hidden = false;
+    document.getElementById("status").textContent = "Starting download…";
+    vscode.postMessage({ command: "download", model: selected.value });
+  });
+
+  window.addEventListener("message", (event) => {
+    const message = event.data;
+    if (message.command === "progress") {
+      document.getElementById("bar").style.width = `${message.percent}%`;
+      document.getElementById("status").textContent = message.status;
+    }
+    if (message.command === "error") {
+      document.getElementById("status").textContent = message.status;
+      document.getElementById("download").disabled = false;
+    }
+  });
+</script>

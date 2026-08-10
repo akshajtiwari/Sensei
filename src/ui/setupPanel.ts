@@ -5,78 +5,74 @@ import { getSystemInfo } from "../utils/systemCheck";
 import { MODEL_TIERS, pullModel } from "../ollama/modelManager";
 import { logger } from "../utils/logger";
 
-// Stub — full webview panel to be built in Phase 3
+// First-run setup page. It recommends a model, shows download progress, and
+// saves the selected model in VS Code settings.
 export async function setupPanel(
   context: vscode.ExtensionContext,
 ): Promise<void> {
   const sysInfo = await getSystemInfo();
-
-  const tierLabel =
-    sysInfo.recommendedTier.charAt(0).toUpperCase() +
-    sysInfo.recommendedTier.slice(1);
-  const modelName =
-    MODEL_TIERS[sysInfo.recommendedTier as keyof typeof MODEL_TIERS];
-  const choice = await vscode.window.showInformationMessage(
-    `Sensei detected ${sysInfo.totalRAMgb}GB RAM. Recommended model: ${tierLabel} (${modelName})`,
-    "Download Recommended",
-    "Choose Manually",
+  const panel = vscode.window.createWebviewPanel(
+    "senseiSetup",
+    "Sensei Setup",
+    vscode.ViewColumn.One,
+    { enableScripts: true },
   );
 
-  let selectedModel = modelName;
+  const htmlPath = path.join(context.extensionPath, "media", "setup.html");
+  const cssPath = vscode.Uri.file(
+    path.join(context.extensionPath, "media", "setup.css"),
+  );
+  const cssUri = panel.webview.asWebviewUri(cssPath).toString();
 
-  if (choice === "Choose Manually") {
-    const picked = await vscode.window.showQuickPick(
-      [
-        {
-          label: "Minimum",
-          description: MODEL_TIERS.minimum,
-          detail: "For ≤4GB RAM",
-        },
-        {
-          label: "Average",
-          description: MODEL_TIERS.average,
-          detail: "For 4-8GB RAM",
-        },
-        {
-          label: "Good",
-          description: MODEL_TIERS.good,
-          detail: "For 8GB+ RAM",
-        },
-      ],
-      { placeHolder: "Pick a model tier" },
-    );
-    if (!picked) {
-      return;
-    }
-    selectedModel = picked.description!;
-  }
+  let html = fs.readFileSync(htmlPath, "utf8");
+  html = html.split("__CSP_SOURCE__").join(panel.webview.cspSource);
+  html = html.split("__CSS__").join(cssUri);
+  html = html.split("__RAM__").join(String(sysInfo.totalRAMgb));
+  html = html.split("__RECOMMENDED__").join(sysInfo.recommendedTier);
+  html = html.split("__MINIMUM__").join(MODEL_TIERS.minimum);
+  html = html.split("__AVERAGE__").join(MODEL_TIERS.average);
+  html = html.split("__GOOD__").join(MODEL_TIERS.good);
+  panel.webview.html = html;
 
-  if (!choice) {
-    return;
-  }
-
-  await vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Notification,
-      title: `Downloading ${selectedModel}...`,
-      cancellable: true,
-    },
-    async () => {
-      const ok = await pullModel(selectedModel, (status) =>
-        logger.info(status),
-      );
-      if (ok) {
-        await vscode.workspace
-          .getConfiguration("sensei")
-          .update("model", selectedModel, vscode.ConfigurationTarget.Global);
-        vscode.window.showInformationMessage(
-          `Sensei ready. Model: ${selectedModel}`,
-        );
-      } else {
-        vscode.window.showErrorMessage(
-          "Model download failed. Check Ollama is running.",
-        );
+  const validModels = Object.values(MODEL_TIERS) as string[];
+  panel.webview.onDidReceiveMessage(
+    async (message: { command?: string; model?: string }) => {
+      if (message.command !== "download" || !message.model) {
+        return;
       }
+      if (!validModels.includes(message.model)) {
+        return;
+      }
+
+      const selectedModel = message.model;
+      const ok = await pullModel(selectedModel, (status) => {
+        logger.info(status);
+        const match = status.match(/^(\d+)%$/);
+        const percent = match ? Number(match[1]) : 100;
+        void panel.webview.postMessage({
+          command: "progress",
+          percent,
+          status,
+        });
+      });
+
+      if (!ok) {
+        void panel.webview.postMessage({
+          command: "error",
+          status: "Download failed. Check that Ollama is running.",
+        });
+        return;
+      }
+
+      await vscode.workspace
+        .getConfiguration("sensei")
+        .update("model", selectedModel, vscode.ConfigurationTarget.Global);
+      vscode.window.showInformationMessage(
+        `Sensei ready. Model: ${selectedModel}. Reload VS Code to start.`,
+      );
+      panel.dispose();
     },
+    undefined,
+    context.subscriptions,
   );
 }

@@ -5,18 +5,14 @@ import * as os from "os"; // Node's built-in module for OS info (no install)
 import checkDiskSpace from "check-disk-space"; // an installed npm package
 import { MODEL_TIERS, ModelTier } from "../ollama/modelManager";
 
-// LEARN: `interface` = the shape of an object. `getSystemInfo` promises to
-// return exactly these three fields with these types.
+
 export interface SystemInfo {
   totalRAMgb: number;
   freeStorageGb: number;
   recommendedTier: ModelTier;
 }
 
-// LEARN: This is a PURE function — same input always gives the same output, and
-// it touches nothing outside itself (no disk, no network). Pure functions are
-// the easiest things in the world to unit-test, which is exactly why the tier
-// logic was pulled out here. See src/test/systemCheck.test.ts.
+
 //
 // The three tiers should be:
 //   ramGb >= 8         -> "good"
@@ -34,7 +30,6 @@ export function recommendTier(ramGb: number): ModelTier {
     return "minimum";
 }
 
-// LEARN: `async` because reading disk space returns a Promise we must `await`.
 export async function getSystemInfo(): Promise<SystemInfo> {
   // `os.totalmem()` is bytes; divide by 1024^3 to get gigabytes, then round.
   const totalRAMgb = Math.round(os.totalmem() / 1024 ** 3);

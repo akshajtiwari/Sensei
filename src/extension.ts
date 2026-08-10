@@ -1,87 +1,97 @@
 import * as vscode from "vscode";
+import { exec, spawn } from "child_process";
 import { checkOllamaHealth } from "./ollama/healthCheck";
 import { setupPanel } from "./ui/setupPanel";
 import { StatusBarManager } from "./ui/statusBar";
 import { registerSetIntent, registerResetSession } from "./commands/setIntent";
-import { exec } from "child_process";
-import { ChildProcess } from "child_process";
-import { error } from "console";
-import { resolve } from "path";
+import * as intentTracker from "./core/intentTracker";
+import * as hintDelivery from "./core/hintDelivery";
+import * as codeWatcher from "./core/codeWatcher";
+
 export async function activate(context: vscode.ExtensionContext) {
   console.log("Sensei is active.");
 
-  // 1. Check if ollama exits
+  // 1. Is the Ollama server reachable?
   const ollamaRunning = await checkOllamaHealth();
 
-  function checkversion(): Promise<boolean> {
+  // Helper: is the `ollama` command installed at all?
+  function isOllamaInstalled(): Promise<boolean> {
     return new Promise((resolve) => {
-      exec("ollama --version", (error) => {
-        resolve(!error);
-      });
+      exec("ollama --version", (err) => resolve(!err));
     });
   }
-  function ollama(): Promise<boolean> {
+
+
+  function startOllama(): Promise<boolean> {
     return new Promise((resolve) => {
-      exec("ollama", (error) => {
-        resolve(!error);
+      const process = spawn("ollama", ["serve"], {
+        detached: true,
+        stdio: "ignore",
+      });
+      process.once("error", () => resolve(false));
+      process.once("spawn", () => {
+        process.unref();
+        resolve(true);
       });
     });
   }
 
   if (!ollamaRunning) {
-    //Prompt if ollama is not installed
-    const checkver = await checkversion();
-    if (!checkver) {
-      try {
-        const download_action = await vscode.window.showWarningMessage(
-          "Sensei needs Ollama to work. Please install below",
-          "Download Ollama",
-        );
-        if (download_action == "Download Ollama") {
-          vscode.env.openExternal(vscode.Uri.parse("https://ollama.com"));
-        }
-        vscode.window.showInformationMessage(
-          "After installing Ollama, reload VS Code to activate Sensei.",
-        );
-      } catch (error: unknown) {
-        console.error("unexpected error occurred", error);
-      }
-    } else //ollama is not running
-    {
-      const run_ollama = await vscode.window.showWarningMessage(
-        "Ollama is not running",
-        "Start Ollama",
+    const installed = await isOllamaInstalled();
+    if (!installed) {
+      // Not installed — send the user to the download page.
+      const action = await vscode.window.showWarningMessage(
+        "Sensei needs Ollama to work. Please install it.",
+        "Download Ollama",
       );
-      if (run_ollama == "Start Ollama") {
-        const start_ollama = await ollama();
-        if (!start_ollama) {
-          vscode.window.showWarningMessage(
-            "ollama could not start please start manually",
-          );
-        }
+      if (action === "Download Ollama") {
+        vscode.env.openExternal(vscode.Uri.parse("https://ollama.com"));
+      }
+      vscode.window.showInformationMessage(
+        "After installing Ollama, reload VS Code to activate Sensei.",
+      );
+      return;
+    }
+
+    // Installed but not running — offer to start it.
+    const action = await vscode.window.showWarningMessage(
+      "Ollama is installed but not running.",
+      "Start Ollama",
+    );
+    if (action === "Start Ollama") {
+      const started = await startOllama();
+      if (!started) {
+        vscode.window.showWarningMessage(
+          "Ollama could not start. Please run `ollama serve` manually.",
+        );
       }
     }
   }
-  // NOW WE KNOW OLLAMA IS RUNNING
-  // CHECK MODEL
-  // 2. Check if a model is already configured
+
   const config = vscode.workspace.getConfiguration("sensei");
   const selectedModel = config.get<string>("model");
 
   if (!selectedModel) {
-    // First time — show setup panel
+    // First run — show the setup flow and stop here. The user reloads after.
     setupPanel(context);
     return;
   }
 
-  // 3. Ollama running + model set — initialize core
   StatusBarManager.init(context);
   registerSetIntent(context);
   registerResetSession(context);
+  intentTracker.init(context);
+  hintDelivery.init(context);
+  codeWatcher.start(context);
+
+  if (vscode.window.activeTextEditor) {
+    void intentTracker.promptForIntent(vscode.window.activeTextEditor.document);
+  }
 
   vscode.window.showInformationMessage(
     `Sensei is watching. Model: ${selectedModel}`,
   );
 }
+
 
 export function deactivate() {}

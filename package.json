@@ -24,13 +24,24 @@
         "command": "sensei.resetSession",
         "title": "Sensei: Reset Session"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Sensei",
+      "properties": {
+        "sensei.model": {
+          "type": "string",
+          "default": "",
+          "description": "The Ollama model Sensei uses to analyze your code (set during first-run setup)."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "test": "npm run compile && node --test \"out/test/**/*.test.js\""
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

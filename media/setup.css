@@ -1,0 +1,65 @@
+/* setup.css — Stage 6 (STRETCH) styling for the onboarding webview.
+   LEARN: VS Code exposes its theme as CSS variables like var(--vscode-foreground),
+   so a webview can match the user's color theme automatically. */
+
+body {
+  font-family: var(--vscode-font-family);
+  color: var(--vscode-foreground);
+  padding: 2rem;
+}
+
+.card {
+  max-width: 32rem;
+  margin: 0 auto;
+}
+
+h1 {
+  margin-bottom: 0.25rem;
+}
+
+.ram {
+  opacity: 0.8;
+}
+
+fieldset {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  margin: 1rem 0;
+}
+
+label {
+  display: block;
+  padding: 0.4rem 0;
+}
+
+button {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.progress {
+  height: 8px;
+  background: var(--vscode-panel-border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+#bar {
+  height: 100%;
+  width: 0%;
+  background: var(--vscode-progressBar-background);
+}
