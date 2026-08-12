@@ -1,5 +1,3 @@
-import ollama from 'ollama' 
-
 const OLLAMA_BASE = "http://localhost:11434";
 
 
@@ -11,7 +9,6 @@ export const MODEL_TIERS = {
 
 
 export type ModelTier = keyof typeof MODEL_TIERS;
-await ollama.pull({model: 'qwen2.5-coder:3b'})
 
 
 export function parsePullProgress(line: string): number {

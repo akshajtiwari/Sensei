@@ -1,6 +1,7 @@
 
 
 export class IntentStore {
+  private intents = new Map<string, string>();
 
   get(key: string): string | undefined {
     return this.intents.get(key);
