@@ -1,3 +1,4 @@
+import os from "os";
 import * as vscode from "vscode";
 import { exec, spawn } from "child_process";
 import { checkOllamaHealth } from "./ollama/healthCheck";
@@ -10,6 +11,7 @@ import * as codeWatcher from "./core/codeWatcher";
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log("Sensei is active.");
+  
 
   // 1. Is the Ollama server reachable?
   const ollamaRunning = await checkOllamaHealth();
@@ -20,7 +22,7 @@ export async function activate(context: vscode.ExtensionContext) {
       exec("ollama --version", (err) => resolve(!err));
     });
   }
-
+  const operating_system=os.platform();
 
   function startOllama(): Promise<boolean> {
     return new Promise((resolve) => {
@@ -45,7 +47,13 @@ export async function activate(context: vscode.ExtensionContext) {
         "Download Ollama",
       );
       if (action === "Download Ollama") {
-        vscode.env.openExternal(vscode.Uri.parse("https://ollama.com"));
+        if(operating_system=="win32"){
+          exec('powershell.exe -Command "irm https://ollama.com/install.ps1 | iex"',(error,stdout,stderr)=>{if(error) console.error(error)});
+        }
+        if(operating_system=="darwin" || operating_system=="linux"){
+          exec('curl -fsSL https://ollama.com/install.sh | sh',(error,stdout,stderr)=>{if(error) console.error(error)});
+        }
+        
       }
       vscode.window.showInformationMessage(
         "After installing Ollama, reload VS Code to activate Sensei.",
